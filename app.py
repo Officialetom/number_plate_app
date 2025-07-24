@@ -81,7 +81,7 @@ def upload():
         st.image(image, caption="Uploaded Image", use_container_width=True)
 
     if st.button("Process Image"):
-        text = ocr_space_image(image)
+        text = google_vision_ocr(image)
         st.write(f"OCR Extracted Text: {text}")  # Debug: see the actual OCR output
         cursor.execute("INSERT INTO plates (image, characters) VALUES (?, ?)",
                        (image_data, text))
