@@ -71,16 +71,17 @@ def upload():
     st.title("Upload Plate Image")
     uploaded_file = st.file_uploader("Choose an image", type=["png", "jpg", "jpeg"])
     if uploaded_file is not None:
-        image_data = uploaded_file.read()
+        image_data = uploaded_file.getvalue()
         image = Image.open(BytesIO(image_data))
         st.image(image, caption="Uploaded Image", use_container_width=True)
 
     if st.button("Process Image"):
         text = ocr_space_image(image)
-        cursor.execute("INSERT INTO plates (image, characters) VALUES (?, ?)", 
+        cursor.execute("INSERT INTO plates (image, characters) VALUES (?, ?)",
                        (image_data, text))
         conn.commit()
         st.success(f"Image processed and stored. Extracted Text: {text}")
+
 
 
 # --- History Page ---
@@ -98,7 +99,12 @@ def history():
         with col1:
             st.write(f"{i}")
         with col2:
-            st.image(Image.open(BytesIO(img_blob)), width=100)
+            try:
+                image = Image.open(BytesIO(img_blob))
+                st.image(image, width=100)
+            except Exception as e:
+                st.warning("Could not load image")
+                st.text(f"{e}")
         with col3:
             st.write(chars)
         with col4:
@@ -107,6 +113,7 @@ def history():
                 conn.commit()
                 st.success("Entry deleted.")
                 st.rerun()
+
 
 # --- Logout ---
 def logout():
