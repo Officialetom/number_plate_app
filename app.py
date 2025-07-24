@@ -29,6 +29,7 @@ def ocr_space_image(image):
         data={"apikey": api_key, "language": "eng"}
     )
     result = response.json()
+    st.write(result)
     try:
         return result["ParsedResults"][0]["ParsedText"].strip()
     except Exception:
