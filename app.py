@@ -18,7 +18,8 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS plates (
 conn.commit()
 
 # --- Helper: Crop central part of image ---
-def crop_center(image, width_ratio=0.8, height_ratio=0.3):
+def crop_center(image, width_ratio=0.95, height_ratio=0.65):
+    """Crop a larger central region of the image."""
     img_width, img_height = image.size
     new_width = int(img_width * width_ratio)
     new_height = int(img_height * height_ratio)
@@ -29,6 +30,7 @@ def crop_center(image, width_ratio=0.8, height_ratio=0.3):
     bottom = top + new_height
 
     return image.crop((left, top, right, bottom))
+
 
 # --- OCR Function using Google Vision ---
 def google_vision_ocr(image):
