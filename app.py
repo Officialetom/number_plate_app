@@ -2,6 +2,7 @@
 import streamlit as st
 import sqlite3
 import requests
+import base64
 from PIL import Image
 import os
 from io import BytesIO
@@ -17,33 +18,31 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS plates (
 conn.commit()
 
 # --- OCR API ---
-def ocr_space_image(image):
-    api_key = "K82429890588957"
-    url_api = "https://api.ocr.space/parse/image"
-    # Crop middle portion (manually tweak values if needed)
-    width, height = image.size
-    top = int(height * 0.3)
-    bottom = int(height * 0.85)
-    cropped_image = image.crop((0, top, width, bottom))
-    
+def google_vision_ocr(image):
+    api_key = "AIzaSyDE4Rux93LTAdWI9h9sg_4ANtDRfmIsCy0"
+    url = f"https://vision.googleapis.com/v1/images:annotate?key={api_key}"
+
     buffered = BytesIO()
-    cropped_image.save(buffered, format="JPEG")
-    buffered.seek(0)
+    image.save(buffered, format="JPEG")
+    image_bytes = base64.b64encode(buffered.getvalue()).decode()
 
-    files = {
-        'file': ('plate.jpg', buffered, 'image/jpeg')
-    }
     data = {
-        'apikey': api_key,
-        'language': 'eng'
+        "requests": [{
+            "image": {
+                "content": image_bytes
+            },
+            "features": [{
+                "type": "TEXT_DETECTION"
+            }]
+        }]
     }
 
-    response = requests.post(url_api, files=files, data=data)
+    response = requests.post(url, json=data)
     result = response.json()
     try:
-        return result["ParsedResults"][0]["ParsedText"].strip()
+        return result["responses"][0]["fullTextAnnotation"]["text"].strip()
     except Exception:
-        st.write(result)  # Optional: view detailed error
+        st.write(result)
         return "OCR Failed"
 
 
