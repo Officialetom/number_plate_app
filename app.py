@@ -18,22 +18,28 @@ conn.commit()
 
 # --- OCR API ---
 def ocr_space_image(image):
-    api_key = "K82429890588957"  # Demo API key, replace with your own for production
+    api_key = "K82429890588957"
     url_api = "https://api.ocr.space/parse/image"
     buffered = BytesIO()
     image.save(buffered, format="JPEG")
     buffered.seek(0)
-    response = requests.post(
-        url_api,
-        files={"filename": buffered},
-        data={"apikey": api_key, "language": "eng"}
-    )
+
+    files = {
+        'file': ('plate.jpg', buffered, 'image/jpeg')
+    }
+    data = {
+        'apikey': api_key,
+        'language': 'eng'
+    }
+
+    response = requests.post(url_api, files=files, data=data)
     result = response.json()
-    st.write(result)
     try:
         return result["ParsedResults"][0]["ParsedText"].strip()
     except Exception:
+        st.write(result)  # Optional: view detailed error
         return "OCR Failed"
+
 
 # --- Session State Init ---
 if 'logged_in' not in st.session_state:
