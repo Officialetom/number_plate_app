@@ -91,7 +91,7 @@ def login():
 
 # --- Dashboard Page ---
 def dashboard():
-    st.title("Dashboard")
+    st.title("Dashboard - Image Processing with OCR")
     st.write("Welcome, admin 👋")
     cursor.execute("SELECT COUNT(*) FROM plates")
     count = cursor.fetchone()[0]
