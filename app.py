@@ -77,10 +77,11 @@ def upload():
 
     if st.button("Process Image"):
         text = ocr_space_image(image)
+        st.write(f"OCR Extracted Text: {text}")  # Debug: see the actual OCR output
         cursor.execute("INSERT INTO plates (image, characters) VALUES (?, ?)",
                        (image_data, text))
         conn.commit()
-        st.success(f"Image processed and stored. Extracted Text: {text}")
+        st.success("Image processed and stored.")
 
 
 
@@ -106,7 +107,7 @@ def history():
                 st.warning("Could not load image")
                 st.text(f"{e}")
         with col3:
-            st.write(chars)
+            st.write(chars if chars else "No text extracted")
         with col4:
             if st.button("Delete", key=f"del_{id}"):
                 cursor.execute("DELETE FROM plates WHERE id=?", (id,))
