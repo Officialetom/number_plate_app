@@ -37,7 +37,7 @@ def google_vision_ocr(image):
     cropped_image.save(buffered, format="JPEG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
 
-    API_KEY = "AIzaSyDE4Rux93LTAdWI9h9sg_4ANtDRfmIsCy0"  # Replace with your own key for production
+    API_KEY = "AIzaSyDE4Rux93LTAdWI9h9sg_4ANtDRfmIsCy0"  # Replace with your real key in production
     url = f"https://vision.googleapis.com/v1/images:annotate?key={API_KEY}"
     headers = {"Content-Type": "application/json"}
     payload = {
@@ -53,12 +53,22 @@ def google_vision_ocr(image):
     result = response.json()
 
     try:
-        full_text = result['responses'][0]['fullTextAnnotation']['text']
-        # Extract plate number format like APP-456CV or ABC123XY
-        match = re.search(r"[A-Z]{2,3}-?\d{3}[A-Z]{2,3}", full_text.replace(" ", "").upper())
+        response_data = result['responses'][0]
+
+        if 'fullTextAnnotation' in response_data:
+            text = response_data['fullTextAnnotation']['text']
+        elif 'textAnnotations' in response_data and len(response_data['textAnnotations']) > 0:
+            text = response_data['textAnnotations'][0]['description']
+        else:
+            return "No text found"
+
+        # Clean and extract plate format like ABC-123XY or ABC123XY
+        match = re.search(r"[A-Z]{2,3}-?\d{3}[A-Z]{2,3}", text.replace(" ", "").upper())
         return match.group(0) if match else "No valid plate found"
+        
     except Exception as e:
         return f"OCR Failed: {e}"
+
 
 # --- Session State ---
 if 'logged_in' not in st.session_state:
