@@ -47,7 +47,7 @@ def login():
         if username == "admin" and password == "1234":
             st.session_state.logged_in = True
             st.success("Login successful")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Invalid credentials")
 
@@ -97,13 +97,13 @@ def history():
                 cursor.execute("DELETE FROM plates WHERE id=?", (id,))
                 conn.commit()
                 st.success("Entry deleted.")
-                st.experimental_rerun()
+                st.rerun()
 
 # --- Logout ---
 def logout():
     st.session_state.logged_in = False
     st.success("Logged out successfully")
-    st.experimental_rerun()
+    st.rerun()
 
 # --- Main App Routing ---
 def main():
