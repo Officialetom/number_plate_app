@@ -1,4 +1,3 @@
-
 import streamlit as st
 import sqlite3
 import requests
@@ -6,6 +5,7 @@ import base64
 from PIL import Image
 import os
 from io import BytesIO
+import re
 
 # --- DB Setup ---
 conn = sqlite3.connect('plate_data.db', check_same_thread=False)
@@ -17,9 +17,8 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS plates (
 )''')
 conn.commit()
 
-
+# --- Helper: Crop central part of image ---
 def crop_center(image, width_ratio=0.8, height_ratio=0.3):
-    """Crop the central region of the image based on given ratios."""
     img_width, img_height = image.size
     new_width = int(img_width * width_ratio)
     new_height = int(img_height * height_ratio)
@@ -31,16 +30,14 @@ def crop_center(image, width_ratio=0.8, height_ratio=0.3):
 
     return image.crop((left, top, right, bottom))
 
-# --- OCR API ---
+# --- OCR Function using Google Vision ---
 def google_vision_ocr(image):
-
     cropped_image = crop_center(image)
-
-    buffered = io.BytesIO()
+    buffered = BytesIO()
     cropped_image.save(buffered, format="JPEG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
-    
-    api_key = "AIzaSyDE4Rux93LTAdWI9h9sg_4ANtDRfmIsCy0"
+
+    API_KEY = "AIzaSyDE4Rux93LTAdWI9h9sg_4ANtDRfmIsCy0"  # Replace with your own key for production
     url = f"https://vision.googleapis.com/v1/images:annotate?key={API_KEY}"
     headers = {"Content-Type": "application/json"}
     payload = {
@@ -57,14 +54,13 @@ def google_vision_ocr(image):
 
     try:
         full_text = result['responses'][0]['fullTextAnnotation']['text']
-        # Extract plate number using regex (e.g., APP-456CV or ABC123XY)
+        # Extract plate number format like APP-456CV or ABC123XY
         match = re.search(r"[A-Z]{2,3}-?\d{3}[A-Z]{2,3}", full_text.replace(" ", "").upper())
         return match.group(0) if match else "No valid plate found"
     except Exception as e:
         return f"OCR Failed: {e}"
 
-
-# --- Session State Init ---
+# --- Session State ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
@@ -98,15 +94,12 @@ def upload():
         image = Image.open(BytesIO(image_data))
         st.image(image, caption="Uploaded Image", use_container_width=True)
 
-    if st.button("Process Image"):
-        text = google_vision_ocr(image)
-        st.write(f"OCR Extracted Text: {text}")  # Debug: see the actual OCR output
-        cursor.execute("INSERT INTO plates (image, characters) VALUES (?, ?)",
-                       (image_data, text))
-        conn.commit()
-        st.success("Image processed and stored.")
-
-
+        if st.button("Process Image"):
+            text = google_vision_ocr(image)
+            st.write(f"OCR Extracted Text: {text}")
+            cursor.execute("INSERT INTO plates (image, characters) VALUES (?, ?)", (image_data, text))
+            conn.commit()
+            st.success("Image processed and stored.")
 
 # --- History Page ---
 def history():
@@ -138,14 +131,13 @@ def history():
                 st.success("Entry deleted.")
                 st.rerun()
 
-
 # --- Logout ---
 def logout():
     st.session_state.logged_in = False
     st.success("Logged out successfully")
     st.rerun()
 
-# --- Main App Routing ---
+# --- Main ---
 def main():
     if not st.session_state.logged_in:
         login()
