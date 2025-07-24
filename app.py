@@ -36,6 +36,7 @@ def crop_center(image, width_ratio=0.95, height_ratio=0.65):
 def google_vision_ocr(image):
     cropped_image = crop_center(image)
     buffered = BytesIO()
+    cropped_image = cropped_image.convert("RGB")
     cropped_image.save(buffered, format="JPEG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
 
