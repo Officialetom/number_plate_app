@@ -17,33 +17,51 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS plates (
 )''')
 conn.commit()
 
+
+def crop_center(image, width_ratio=0.8, height_ratio=0.3):
+    """Crop the central region of the image based on given ratios."""
+    img_width, img_height = image.size
+    new_width = int(img_width * width_ratio)
+    new_height = int(img_height * height_ratio)
+
+    left = (img_width - new_width) // 2
+    top = (img_height - new_height) // 2
+    right = left + new_width
+    bottom = top + new_height
+
+    return image.crop((left, top, right, bottom))
+
 # --- OCR API ---
 def google_vision_ocr(image):
+
+    cropped_image = crop_center(image)
+
+    buffered = io.BytesIO()
+    cropped_image.save(buffered, format="JPEG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    
     api_key = "AIzaSyDE4Rux93LTAdWI9h9sg_4ANtDRfmIsCy0"
-    url = f"https://vision.googleapis.com/v1/images:annotate?key={api_key}"
-
-    buffered = BytesIO()
-    image.save(buffered, format="JPEG")
-    image_bytes = base64.b64encode(buffered.getvalue()).decode()
-
-    data = {
-        "requests": [{
-            "image": {
-                "content": image_bytes
-            },
-            "features": [{
-                "type": "TEXT_DETECTION"
-            }]
-        }]
+    url = f"https://vision.googleapis.com/v1/images:annotate?key={API_KEY}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "requests": [
+            {
+                "image": {"content": img_str},
+                "features": [{"type": "TEXT_DETECTION"}],
+            }
+        ]
     }
 
-    response = requests.post(url, json=data)
+    response = requests.post(url, headers=headers, json=payload)
     result = response.json()
+
     try:
-        return result["responses"][0]["fullTextAnnotation"]["text"].strip()
-    except Exception:
-        st.write(result)
-        return "OCR Failed"
+        full_text = result['responses'][0]['fullTextAnnotation']['text']
+        # Extract plate number using regex (e.g., APP-456CV or ABC123XY)
+        match = re.search(r"[A-Z]{2,3}-?\d{3}[A-Z]{2,3}", full_text.replace(" ", "").upper())
+        return match.group(0) if match else "No valid plate found"
+    except Exception as e:
+        return f"OCR Failed: {e}"
 
 
 # --- Session State Init ---
