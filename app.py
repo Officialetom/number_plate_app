@@ -20,8 +20,14 @@ conn.commit()
 def ocr_space_image(image):
     api_key = "K82429890588957"
     url_api = "https://api.ocr.space/parse/image"
+    # Crop middle portion (manually tweak values if needed)
+    width, height = image.size
+    top = int(height * 0.3)
+    bottom = int(height * 0.85)
+    cropped_image = image.crop((0, top, width, bottom))
+    
     buffered = BytesIO()
-    image.save(buffered, format="JPEG")
+    cropped_image.save(buffered, format="JPEG")
     buffered.seek(0)
 
     files = {
