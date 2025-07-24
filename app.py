@@ -18,7 +18,7 @@ conn.commit()
 
 # --- OCR API ---
 def ocr_space_image(image):
-    api_key = "helloworld"  # Demo API key, replace with your own for production
+    api_key = "K82429890588957"  # Demo API key, replace with your own for production
     url_api = "https://api.ocr.space/parse/image"
     buffered = BytesIO()
     image.save(buffered, format="JPEG")
